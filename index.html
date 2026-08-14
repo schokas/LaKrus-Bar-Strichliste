@@ -203,6 +203,79 @@
     padding: 40px 20px;
     font-size: 0.9rem;
   }
+  .history-toggle {
+    width: 100%;
+    background: rgba(42, 32, 26, 0.85);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 12px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+    margin-bottom: 14px;
+  }
+  .history-panel {
+    background: rgba(42, 32, 26, 0.9);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .history-header .btn-cancel {
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+    background: transparent;
+    color: var(--text-dim);
+  }
+  .history-entry {
+    border-top: 1px solid var(--card-border);
+    padding: 10px 0;
+  }
+  .history-entry:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+  .history-entry-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+  }
+  .history-entry-name {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  .history-entry-total {
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .history-entry-date {
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .history-entry-drinks {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+  }
+  .history-entry-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.72rem;
+    text-decoration: underline;
+    padding: 4px 0 0 0;
+  }
   .grand-total-bar {
     position: fixed;
     bottom: 0;
@@ -250,6 +323,17 @@
   <button onclick="addGuest()">+ Gast</button>
 </div>
 
+<button id="historyToggle" class="history-toggle" onclick="toggleHistory()">📋 Verlauf bezahlter Rechnungen anzeigen</button>
+
+<div id="historyPanel" class="history-panel" style="display:none;">
+  <div class="history-header">
+    <span>Bezahlte Rechnungen</span>
+    <button class="btn-cancel" onclick="clearHistory()">Verlauf leeren</button>
+  </div>
+  <div id="historyList"></div>
+  <div id="historyEmpty" class="empty-state" style="display:none;">Noch keine bezahlten Rechnungen.</div>
+</div>
+
 <div id="guestList"></div>
 <div id="emptyState" class="empty-state" style="display:none;">Noch keine Gäste. Leg oben einen an!</div>
 
@@ -262,6 +346,8 @@
 const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.50, weizen: 3.00, softdrink: 2.50 };
 const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink' };
 let guests = [];
+let history = [];
+let historyVisible = false;
 let saveTimer = null;
 
 function fmt(n) {
@@ -289,7 +375,16 @@ function loadData() {
   } catch (e) {
     guests = [];
   }
+  try {
+    const rawHistory = localStorage.getItem('bar-history');
+    if (rawHistory) {
+      history = JSON.parse(rawHistory);
+    }
+  } catch (e) {
+    history = [];
+  }
   render();
+  renderHistory();
 }
 
 function scheduleSave() {
@@ -297,6 +392,7 @@ function scheduleSave() {
   saveTimer = setTimeout(() => {
     try {
       localStorage.setItem('bar-guests', JSON.stringify(guests));
+      localStorage.setItem('bar-history', JSON.stringify(history));
     } catch (e) {
       console.error('Speichern fehlgeschlagen', e);
     }
@@ -338,9 +434,17 @@ function payGuest(guestId) {
   const g = guests.find(g => g.id === guestId);
   if (!g) return;
   if (g.confirmingPay) {
+    history.unshift({
+      id: 'h_' + Date.now().toString(),
+      name: g.name,
+      drinks: { ...g.drinks },
+      total: guestTotal(g),
+      paidAt: new Date().toISOString()
+    });
     guests = guests.filter(g => g.id !== guestId);
     scheduleSave();
     render();
+    renderHistory();
   } else {
     guests.forEach(x => { x.confirmingPay = false; x.confirmingDelete = false; });
     g.confirmingPay = true;
@@ -446,6 +550,82 @@ function render() {
   });
 
   document.getElementById('grandTotal').textContent = fmt(grandTotal);
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  const dateStr = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const timeStr = d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  return `${dateStr}, ${timeStr} Uhr`;
+}
+
+function toggleHistory() {
+  historyVisible = !historyVisible;
+  const panel = document.getElementById('historyPanel');
+  const btn = document.getElementById('historyToggle');
+  panel.style.display = historyVisible ? 'block' : 'none';
+  btn.textContent = historyVisible ? '📋 Verlauf ausblenden' : '📋 Verlauf bezahlter Rechnungen anzeigen';
+  if (historyVisible) renderHistory();
+}
+
+function deleteHistoryEntry(entryId) {
+  history = history.filter(h => h.id !== entryId);
+  scheduleSave();
+  renderHistory();
+}
+
+function clearHistory() {
+  if (history.length === 0) return;
+  const btn = event.target;
+  if (btn.dataset.confirming === 'true') {
+    history = [];
+    scheduleSave();
+    renderHistory();
+  } else {
+    btn.dataset.confirming = 'true';
+    btn.textContent = 'Wirklich alle löschen?';
+    setTimeout(() => {
+      if (btn.dataset.confirming === 'true') {
+        btn.dataset.confirming = 'false';
+        btn.textContent = 'Verlauf leeren';
+      }
+    }, 3000);
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  const empty = document.getElementById('historyEmpty');
+  list.innerHTML = '';
+
+  if (history.length === 0) {
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  history.forEach(h => {
+    const entry = document.createElement('div');
+    entry.className = 'history-entry';
+
+    const drinkParts = [];
+    ['bier', 'schnaps', 'gin', 'wasser', 'weizen', 'softdrink'].forEach(type => {
+      if (h.drinks[type] > 0) {
+        drinkParts.push(`${LABELS[type]} ${h.drinks[type]}x`);
+      }
+    });
+
+    entry.innerHTML = `
+      <div class="history-entry-top">
+        <span class="history-entry-name">${h.name}</span>
+        <span class="history-entry-total">${fmt(h.total)}</span>
+      </div>
+      <div class="history-entry-date">${fmtDate(h.paidAt)}</div>
+      <div class="history-entry-drinks">${drinkParts.join(' · ')}</div>
+      <button class="history-entry-delete" onclick="deleteHistoryEntry('${h.id}')">Eintrag löschen</button>
+    `;
+    list.appendChild(entry);
+  });
 }
 
 document.getElementById('guestNameInput').addEventListener('keypress', (e) => {
