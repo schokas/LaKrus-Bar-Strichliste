@@ -1,0 +1,1 @@
+# LaKrus-Bar-Strichliste
