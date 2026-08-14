@@ -110,6 +110,38 @@
     margin-bottom: 14px;
     backdrop-filter: blur(4px);
   }
+  @keyframes guestEnter {
+    0% { opacity: 0; transform: translateY(70px) scale(0.88); }
+    45% { opacity: 0.4; transform: translateY(30px) scale(0.94); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .guest-card.entering {
+    animation: guestEnter 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes guestExit {
+    0% { opacity: 1; transform: translateY(0) scale(1); max-height: 500px; }
+    60% { opacity: 0.3; transform: translateY(60px) scale(0.92); }
+    100% { opacity: 0; transform: translateY(90px) scale(0.85); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; border-width: 0; }
+  }
+  .guest-card.exiting {
+    animation: guestExit 0.55s cubic-bezier(0.55, 0, 0.85, 0.35) forwards;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  @keyframes historyEntryEnter {
+    0% { opacity: 0; transform: translateY(-18px); background: rgba(212,160,84,0.28); border-radius: 8px; }
+    100% { opacity: 1; transform: translateY(0); background: rgba(212,160,84,0); border-radius: 8px; }
+  }
+  .history-entry.entering {
+    animation: historyEntryEnter 0.7s ease-out;
+  }
+  @keyframes toggleGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(212,160,84,0); border-color: var(--card-border); }
+    50% { box-shadow: 0 0 14px rgba(212,160,84,0.65); border-color: var(--accent); }
+  }
+  .history-toggle.glow {
+    animation: toggleGlow 0.9s ease-in-out 2;
+  }
   .guest-header {
     display: flex;
     justify-content: space-between;
@@ -346,24 +378,16 @@
 const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.50, weizen: 3.00, softdrink: 2.50 };
 const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink' };
 let guests = [];
-let history = [];
+let paidHistory = [];
 let historyVisible = false;
 let saveTimer = null;
+let knownGuestIds = new Set();
+let newHistoryEntryId = null;
+let payFinalized = new Set();
+let deleteFinalized = new Set();
 
 function fmt(n) {
   return n.toFixed(2).replace('.', ',') + ' €';
-}
-
-function marks(count) {
-  // Strichliste-Darstellung: 4 Striche + 1 Querstrich pro 5er-Bündel
-  let out = '';
-  let full = Math.floor(count / 5);
-  let rest = count % 5;
-  out += '\u{1F5F9} '.repeat(0); // no-op, kept simple below
-  let bundles = [];
-  for (let i = 0; i < full; i++) bundles.push('IIII̶');
-  if (rest > 0) bundles.push('I'.repeat(rest));
-  return bundles.join(' ') + `  (${count}x)`;
 }
 
 function loadData() {
@@ -376,13 +400,14 @@ function loadData() {
     guests = [];
   }
   try {
-    const rawHistory = localStorage.getItem('bar-history');
+    const rawHistory = localStorage.getItem('bar-paidHistory');
     if (rawHistory) {
-      history = JSON.parse(rawHistory);
+      paidHistory = JSON.parse(rawHistory);
     }
   } catch (e) {
-    history = [];
+    paidHistory = [];
   }
+  knownGuestIds = new Set(guests.map(g => g.id));
   render();
   renderHistory();
 }
@@ -392,7 +417,7 @@ function scheduleSave() {
   saveTimer = setTimeout(() => {
     try {
       localStorage.setItem('bar-guests', JSON.stringify(guests));
-      localStorage.setItem('bar-history', JSON.stringify(history));
+      localStorage.setItem('bar-paidHistory', JSON.stringify(paidHistory));
     } catch (e) {
       console.error('Speichern fehlgeschlagen', e);
     }
@@ -434,17 +459,22 @@ function payGuest(guestId) {
   const g = guests.find(g => g.id === guestId);
   if (!g) return;
   if (g.confirmingPay) {
-    history.unshift({
+    const entry = {
       id: 'h_' + Date.now().toString(),
       name: g.name,
       drinks: { ...g.drinks },
       total: guestTotal(g),
       paidAt: new Date().toISOString()
-    });
-    guests = guests.filter(g => g.id !== guestId);
-    scheduleSave();
-    render();
-    renderHistory();
+    };
+    const cardEl = document.getElementById('guest-card-' + guestId);
+    if (cardEl) {
+      cardEl.classList.add('exiting');
+      cardEl.addEventListener('animationend', () => finalizePay(guestId, entry), { once: true });
+      // Sicherheitsnetz, falls animationend aus irgendeinem Grund nicht feuert
+      setTimeout(() => finalizePay(guestId, entry), 650);
+    } else {
+      finalizePay(guestId, entry);
+    }
   } else {
     guests.forEach(x => { x.confirmingPay = false; x.confirmingDelete = false; });
     g.confirmingPay = true;
@@ -452,18 +482,53 @@ function payGuest(guestId) {
   }
 }
 
+function finalizePay(guestId, entry) {
+  if (payFinalized.has(entry.id)) return;
+  payFinalized.add(entry.id);
+
+  paidHistory.unshift(entry);
+  guests = guests.filter(g => g.id !== guestId);
+  knownGuestIds.delete(guestId);
+  newHistoryEntryId = entry.id;
+  scheduleSave();
+  render();
+  renderHistory();
+
+  const toggleBtn = document.getElementById('historyToggle');
+  if (!historyVisible) {
+    toggleBtn.classList.add('glow');
+    setTimeout(() => toggleBtn.classList.remove('glow'), 1900);
+  }
+}
+
 function deleteGuest(guestId) {
   const g = guests.find(g => g.id === guestId);
   if (!g) return;
   if (g.confirmingDelete) {
-    guests = guests.filter(g => g.id !== guestId);
-    scheduleSave();
-    render();
+    const cardEl = document.getElementById('guest-card-' + guestId);
+    if (cardEl) {
+      cardEl.classList.add('exiting');
+      cardEl.addEventListener('animationend', () => finalizeDelete(guestId), { once: true });
+      // Sicherheitsnetz, falls animationend aus irgendeinem Grund nicht feuert
+      setTimeout(() => finalizeDelete(guestId), 650);
+    } else {
+      finalizeDelete(guestId);
+    }
   } else {
     guests.forEach(x => { x.confirmingPay = false; x.confirmingDelete = false; });
     g.confirmingDelete = true;
     render();
   }
+}
+
+function finalizeDelete(guestId) {
+  if (deleteFinalized.has(guestId)) return;
+  deleteFinalized.add(guestId);
+
+  guests = guests.filter(g => g.id !== guestId);
+  knownGuestIds.delete(guestId);
+  scheduleSave();
+  render();
 }
 
 function cancelConfirm(guestId) {
@@ -492,7 +557,8 @@ function render() {
     grandTotal += total;
 
     const card = document.createElement('div');
-    card.className = 'guest-card';
+    card.id = 'guest-card-' + g.id;
+    card.className = 'guest-card' + (knownGuestIds.has(g.id) ? '' : ' entering');
 
     // Absicherung: alte gespeicherte Gäste könnten die neuen Felder noch nicht haben
     if (g.drinks.wasser === undefined) g.drinks.wasser = 0;
@@ -549,6 +615,7 @@ function render() {
     list.appendChild(card);
   });
 
+  knownGuestIds = new Set(guests.map(g => g.id));
   document.getElementById('grandTotal').textContent = fmt(grandTotal);
 }
 
@@ -569,16 +636,16 @@ function toggleHistory() {
 }
 
 function deleteHistoryEntry(entryId) {
-  history = history.filter(h => h.id !== entryId);
+  paidHistory = paidHistory.filter(h => h.id !== entryId);
   scheduleSave();
   renderHistory();
 }
 
 function clearHistory() {
-  if (history.length === 0) return;
+  if (paidHistory.length === 0) return;
   const btn = event.target;
   if (btn.dataset.confirming === 'true') {
-    history = [];
+    paidHistory = [];
     scheduleSave();
     renderHistory();
   } else {
@@ -598,15 +665,15 @@ function renderHistory() {
   const empty = document.getElementById('historyEmpty');
   list.innerHTML = '';
 
-  if (history.length === 0) {
+  if (paidHistory.length === 0) {
     empty.style.display = 'block';
     return;
   }
   empty.style.display = 'none';
 
-  history.forEach(h => {
+  paidHistory.forEach(h => {
     const entry = document.createElement('div');
-    entry.className = 'history-entry';
+    entry.className = 'paidHistory-entry' + (h.id === newHistoryEntryId ? ' entering' : '');
 
     const drinkParts = [];
     ['bier', 'schnaps', 'gin', 'wasser', 'weizen', 'softdrink'].forEach(type => {
@@ -616,16 +683,18 @@ function renderHistory() {
     });
 
     entry.innerHTML = `
-      <div class="history-entry-top">
-        <span class="history-entry-name">${h.name}</span>
-        <span class="history-entry-total">${fmt(h.total)}</span>
+      <div class="paidHistory-entry-top">
+        <span class="paidHistory-entry-name">${h.name}</span>
+        <span class="paidHistory-entry-total">${fmt(h.total)}</span>
       </div>
-      <div class="history-entry-date">${fmtDate(h.paidAt)}</div>
-      <div class="history-entry-drinks">${drinkParts.join(' · ')}</div>
-      <button class="history-entry-delete" onclick="deleteHistoryEntry('${h.id}')">Eintrag löschen</button>
+      <div class="paidHistory-entry-date">${fmtDate(h.paidAt)}</div>
+      <div class="paidHistory-entry-drinks">${drinkParts.join(' · ')}</div>
+      <button class="paidHistory-entry-delete" onclick="deleteHistoryEntry('${h.id}')">Eintrag löschen</button>
     `;
     list.appendChild(entry);
   });
+
+  newHistoryEntryId = null;
 }
 
 document.getElementById('guestNameInput').addEventListener('keypress', (e) => {
