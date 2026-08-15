@@ -728,7 +728,8 @@ async function exportHistoryToExcel() {
     return;
   }
 
-  const headers = ['Datum', 'Uhrzeit', 'Gast', 'Bier', 'Schnaps', 'Gin', 'Wasser', 'Weizen Bier', 'Softdrink', 'Hoco', 'Whiskey', 'Wein', 'Alkoholfreies Bier', 'Gesamtbetrag (€)'];
+  const drinkHeaderNames = { bier: 'Bier', weizen: 'Weizen Bier', schnaps: 'Schnaps', whiskey: 'Whiskey', wein: 'Wein', gin: 'Gin/Cocktail', wasser: 'Wasser', softdrink: 'Softdrink', bierfrei: 'Alkoholfreies Bier' };
+  const headers = ['Datum', 'Uhrzeit', 'Gast', ...DRINK_ORDER.map(t => drinkHeaderNames[t]), 'Gesamtbetrag (€)'];
   const rows = [headers];
 
   // Chronologisch aufsteigend exportieren (ältestes zuerst)
@@ -744,21 +745,14 @@ async function exportHistoryToExcel() {
       dateStr,
       timeStr,
       h.name,
-      h.drinks.bier || 0,
-      h.drinks.schnaps || 0,
-      h.drinks.gin || 0,
-      h.drinks.wasser || 0,
-      h.drinks.weizen || 0,
-      h.drinks.softdrink || 0,
-      h.drinks.hoco || 0,
-      h.drinks.whiskey || 0,
-      h.drinks.wein || 0,
-      h.drinks.bierfrei || 0,
+      ...DRINK_ORDER.map(t => h.drinks[t] || 0),
       h.total.toFixed(2).replace('.', ',')
     ]);
   });
 
-  rows.push(['', '', '', '', '', '', '', '', '', '', '', '', 'Summe', grandSum.toFixed(2).replace('.', ',')]);
+  const summaryRow = new Array(3 + DRINK_ORDER.length).fill('');
+  summaryRow.push('Summe: ' + grandSum.toFixed(2).replace('.', ',') + ' €');
+  rows.push(summaryRow);
 
   // Semikolon als Trennzeichen (deutsches Excel-Standardformat)
   const csvContent = rows.map(r => r.map(csvValue).join(';')).join('\r\n');
@@ -885,28 +879,37 @@ loadData();
 // Funktioniert nur, wenn die Datei über http/https gehostet wird (nicht bei file://,
 // das blockieren Browser aus Sicherheitsgründen). Schadet dort aber nicht, wird
 // dann einfach übersprungen.
+// Strategie: "Network First" - bei Internetverbindung wird IMMER die aktuellste
+// Version geladen (damit Updates sofort ankommen), der Cache dient nur als
+// Fallback, wenn wirklich kein Internet verfügbar ist.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const swCode = `
-    const CACHE = 'strichliste-v1';
+    const CACHE = 'strichliste-v2';
     self.addEventListener('install', e => {
       self.skipWaiting();
-      e.waitUntil(caches.open(CACHE).then(c => c.add(self.registration.scope)));
     });
-    self.addEventListener('activate', e => self.clients.claim());
+    self.addEventListener('activate', e => {
+      e.waitUntil(
+        caches.keys().then(keys =>
+          Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+        ).then(() => self.clients.claim())
+      );
+    });
     self.addEventListener('fetch', e => {
       e.respondWith(
-        caches.match(e.request).then(cached => {
-          const fetchPromise = fetch(e.request).then(res => {
-            caches.open(CACHE).then(c => c.put(e.request, res.clone()));
-            return res;
-          }).catch(() => cached);
-          return cached || fetchPromise;
-        })
+        fetch(e.request).then(res => {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+          return res;
+        }).catch(() => caches.match(e.request))
       );
     });
   `;
   const blob = new Blob([swCode], { type: 'application/javascript' });
-  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).then(reg => {
+    // Falls bereits ein älterer Service Worker aktiv ist, sofort auf die neue Version aktualisieren
+    reg.update();
+  }).catch(() => {});
 }
 </script>
 
