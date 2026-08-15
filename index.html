@@ -28,12 +28,10 @@
     --accent-dark: #b8853d;
     --text: #f0e6da;
     --text-dim: #b8a898;
-    --bier: #e8b94a;
-    --schnaps: #7fc9a0;
-    --gin: #8ab4e0;
-    --wasser: #a8c5d6;
-    --weizen: #f0c869;
-    --softdrink: #d68a8a;
+    --alc: #c0413d;
+    --alc-dark: #a3352f;
+    --nonalc: #4f9e5f;
+    --nonalc-dark: #3f8250;
     --danger: #d4634f;
   }
   * { box-sizing: border-box; }
@@ -163,8 +161,13 @@
     gap: 8px;
     margin-bottom: 12px;
   }
-  .drink-buttons.five {
-    grid-template-columns: repeat(3, 1fr);
+  .drink-category-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    margin-top: 4px;
   }
   .drink-btn {
     border: none;
@@ -183,12 +186,10 @@
     font-size: 0.75rem;
     opacity: 0.75;
   }
-  .drink-btn.bier { background: var(--bier); }
-  .drink-btn.schnaps { background: var(--schnaps); }
-  .drink-btn.gin { background: var(--gin); }
-  .drink-btn.wasser { background: var(--wasser); }
-  .drink-btn.weizen { background: var(--weizen); }
-  .drink-btn.softdrink { background: var(--softdrink); }
+  .drink-btn.alc { background: var(--alc); color: #fff; }
+  .drink-btn.nonalc { background: var(--nonalc); color: #fff; }
+  .drink-btn.alc:active { background: var(--alc-dark); }
+  .drink-btn.nonalc:active { background: var(--nonalc-dark); }
   .drink-btn:active { transform: scale(0.96); }
 
   .tally-line {
@@ -398,11 +399,14 @@
 
 <div class="prices">
   <div class="price-chip">🍺 Bier – 3,00 €</div>
-  <div class="price-chip">🥃 Schnaps – 2,50 €</div>
-  <div class="price-chip">🍸 Gin – 5,00 €</div>
-  <div class="price-chip">💧 Wasser – 2,50 €</div>
   <div class="price-chip">🌾 Weizen Bier – 5,00 €</div>
+  <div class="price-chip">🥃 Schnaps – 2,50 €</div>
+  <div class="price-chip">🥃 Whiskey – 4,00 €</div>
+  <div class="price-chip">🍷 Wein – 3,00 €</div>
+  <div class="price-chip">🍸 Gin/Cocktail – 5,00 €</div>
+  <div class="price-chip">💧 Wasser – 2,00 €</div>
   <div class="price-chip">🥤 Softdrink – 2,50 €</div>
+  <div class="price-chip">🍺 Alkoholfreies Bier – 2,50 €</div>
 </div>
 
 <div class="add-guest">
@@ -433,8 +437,12 @@
 </div>
 
 <script>
-const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.50, weizen: 5.00, softdrink: 2.50 };
-const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink' };
+const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.00, weizen: 5.00, softdrink: 2.50, whiskey: 4.00, wein: 3.00, bierfrei: 2.50 };
+const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin/Cocktail', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink', whiskey: '🥃 Whiskey', wein: '🍷 Wein', bierfrei: '🍺 Alkoholfreies Bier' };
+// Kategorisierung für Sortierung und Farbcodierung: rot = alkoholisch, grün = alkoholfrei
+const ALC_TYPES = ['bier', 'weizen', 'schnaps', 'whiskey', 'wein', 'gin'];
+const NONALC_TYPES = ['wasser', 'softdrink', 'bierfrei'];
+const DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
 let guests = [];
 let paidHistory = [];
 let historyVisible = false;
@@ -486,7 +494,7 @@ function addGuest() {
   const input = document.getElementById('guestNameInput');
   const name = input.value.trim();
   if (!name) return;
-  guests.push({ id: Date.now().toString(), name: name, drinks: { bier: 0, schnaps: 0, gin: 0, wasser: 0, weizen: 0, softdrink: 0 }, actionLog: [] });
+  guests.push({ id: Date.now().toString(), name: name, drinks: { bier: 0, schnaps: 0, gin: 0, wasser: 0, weizen: 0, softdrink: 0, whiskey: 0, wein: 0, bierfrei: 0 }, actionLog: [] });
   input.value = '';
   scheduleSave();
   render();
@@ -520,8 +528,7 @@ function undoLastDrink(guestId) {
 }
 
 function guestTotal(g) {
-  return g.drinks.bier * PRICES.bier + g.drinks.schnaps * PRICES.schnaps + g.drinks.gin * PRICES.gin
-    + g.drinks.wasser * PRICES.wasser + g.drinks.weizen * PRICES.weizen + g.drinks.softdrink * PRICES.softdrink;
+  return DRINK_ORDER.reduce((sum, type) => sum + (g.drinks[type] || 0) * PRICES[type], 0);
 }
 
 function payGuest(guestId) {
@@ -629,13 +636,13 @@ function render() {
     card.id = 'guest-card-' + g.id;
     card.className = 'guest-card' + (knownGuestIds.has(g.id) ? '' : ' entering');
 
-    // Absicherung: alte gespeicherte Gäste könnten die neuen Felder noch nicht haben
-    if (g.drinks.wasser === undefined) g.drinks.wasser = 0;
-    if (g.drinks.weizen === undefined) g.drinks.weizen = 0;
-    if (g.drinks.softdrink === undefined) g.drinks.softdrink = 0;
+    // Absicherung: alte gespeicherte Gäste könnten neue Felder noch nicht haben
+    DRINK_ORDER.forEach(type => {
+      if (g.drinks[type] === undefined) g.drinks[type] = 0;
+    });
 
     let tallyHtml = '';
-    ['bier', 'schnaps', 'gin', 'wasser', 'weizen', 'softdrink'].forEach(type => {
+    DRINK_ORDER.forEach(type => {
       if (g.drinks[type] > 0) {
         tallyHtml += `<div class="tally-line">
           <span>${LABELS[type]}</span>
@@ -673,13 +680,20 @@ function render() {
         <div class="guest-name">${g.name}</div>
         <div class="guest-total">${fmt(total)}</div>
       </div>
+      <div class="drink-category-label alc-label">🔴 Alkoholisch</div>
       <div class="drink-buttons">
-        <button class="drink-btn bier" onclick="addDrink('${g.id}','bier')">🍺 Bier<small>+3,00 €</small></button>
-        <button class="drink-btn schnaps" onclick="addDrink('${g.id}','schnaps')">🥃 Schnaps<small>+2,50 €</small></button>
-        <button class="drink-btn gin" onclick="addDrink('${g.id}','gin')">🍸 Gin<small>+5,00 €</small></button>
-        <button class="drink-btn wasser" onclick="addDrink('${g.id}','wasser')">💧 Wasser<small>+2,50 €</small></button>
-        <button class="drink-btn weizen" onclick="addDrink('${g.id}','weizen')">🌾 Weizen Bier<small>+5,00 €</small></button>
-        <button class="drink-btn softdrink" onclick="addDrink('${g.id}','softdrink')">🥤 Softdrink<small>+2,50 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','bier')">🍺 Bier<small>+3,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','weizen')">🌾 Weizen Bier<small>+5,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','schnaps')">🥃 Schnaps<small>+2,50 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','whiskey')">🥃 Whiskey<small>+4,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','wein')">🍷 Wein<small>+3,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','gin')">🍸 Gin/Cocktail<small>+5,00 €</small></button>
+      </div>
+      <div class="drink-category-label nonalc-label">🟢 Alkoholfrei</div>
+      <div class="drink-buttons">
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','wasser')">💧 Wasser<small>+2,00 €</small></button>
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','softdrink')">🥤 Softdrink<small>+2,50 €</small></button>
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')">🍺 Alkoholfrei<small>+2,50 €</small></button>
       </div>
       ${(g.actionLog && g.actionLog.length > 0) ? `<button class="undo-btn" onclick="undoLastDrink('${g.id}')">↩ Letztes Getränk rückgängig</button>` : ''}
       ${tallyHtml}
@@ -714,7 +728,7 @@ async function exportHistoryToExcel() {
     return;
   }
 
-  const headers = ['Datum', 'Uhrzeit', 'Gast', 'Bier', 'Schnaps', 'Gin', 'Wasser', 'Weizen Bier', 'Softdrink', 'Gesamtbetrag (€)'];
+  const headers = ['Datum', 'Uhrzeit', 'Gast', 'Bier', 'Schnaps', 'Gin', 'Wasser', 'Weizen Bier', 'Softdrink', 'Hoco', 'Whiskey', 'Wein', 'Alkoholfreies Bier', 'Gesamtbetrag (€)'];
   const rows = [headers];
 
   // Chronologisch aufsteigend exportieren (ältestes zuerst)
@@ -736,11 +750,15 @@ async function exportHistoryToExcel() {
       h.drinks.wasser || 0,
       h.drinks.weizen || 0,
       h.drinks.softdrink || 0,
+      h.drinks.hoco || 0,
+      h.drinks.whiskey || 0,
+      h.drinks.wein || 0,
+      h.drinks.bierfrei || 0,
       h.total.toFixed(2).replace('.', ',')
     ]);
   });
 
-  rows.push(['', '', '', '', '', '', '', '', 'Summe', grandSum.toFixed(2).replace('.', ',')]);
+  rows.push(['', '', '', '', '', '', '', '', '', '', '', '', 'Summe', grandSum.toFixed(2).replace('.', ',')]);
 
   // Semikolon als Trennzeichen (deutsches Excel-Standardformat)
   const csvContent = rows.map(r => r.map(csvValue).join(';')).join('\r\n');
@@ -833,23 +851,23 @@ function renderHistory() {
 
   paidHistory.forEach(h => {
     const entry = document.createElement('div');
-    entry.className = 'paidHistory-entry' + (h.id === newHistoryEntryId ? ' entering' : '');
+    entry.className = 'history-entry' + (h.id === newHistoryEntryId ? ' entering' : '');
 
     const drinkParts = [];
-    ['bier', 'schnaps', 'gin', 'wasser', 'weizen', 'softdrink'].forEach(type => {
+    DRINK_ORDER.forEach(type => {
       if (h.drinks[type] > 0) {
         drinkParts.push(`${LABELS[type]} ${h.drinks[type]}x`);
       }
     });
 
     entry.innerHTML = `
-      <div class="paidHistory-entry-top">
-        <span class="paidHistory-entry-name">${h.name}</span>
-        <span class="paidHistory-entry-total">${fmt(h.total)}</span>
+      <div class="history-entry-top">
+        <span class="history-entry-name">${h.name}</span>
+        <span class="history-entry-total">${fmt(h.total)}</span>
       </div>
-      <div class="paidHistory-entry-date">${fmtDate(h.paidAt)}</div>
-      <div class="paidHistory-entry-drinks">${drinkParts.join(' · ')}</div>
-      <button class="paidHistory-entry-delete" onclick="deleteHistoryEntry('${h.id}')">Eintrag löschen</button>
+      <div class="history-entry-date">${fmtDate(h.paidAt)}</div>
+      <div class="history-entry-drinks">${drinkParts.join(' · ')}</div>
+      <button class="history-entry-delete" onclick="deleteHistoryEntry('${h.id}')">Eintrag löschen</button>
     `;
     list.appendChild(entry);
   });
