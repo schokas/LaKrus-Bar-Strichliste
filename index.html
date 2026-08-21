@@ -385,6 +385,16 @@
     color: var(--text-dim);
     margin-bottom: 4px;
   }
+  .history-entry-reorder-tag {
+    display: inline-block;
+    background: rgba(138, 122, 224, 0.18);
+    border: 1px solid #8a7ae0;
+    color: #c3b8f5;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    margin-bottom: 6px;
+  }
   .history-entry-drinks {
     font-size: 0.78rem;
     color: var(--text-dim);
@@ -468,7 +478,7 @@
   <div class="price-chip">🍸 Gin/Cocktail – 5,00 €</div>
   <div class="price-chip">💧 Wasser – 2,00 €</div>
   <div class="price-chip">🥤 Softdrink – 2,50 €</div>
-  <div class="price-chip">🍺 Alkoholfreies Bier – 2,50 €</div>
+  <div class="price-chip">🍺 Alkoholfreies Bier – 3,00 €</div>
 </div>
 
 <div class="add-guest">
@@ -500,7 +510,7 @@
 </div>
 
 <script>
-const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.00, weizen: 5.00, softdrink: 2.50, whiskey: 4.00, wein: 3.00, bierfrei: 2.50 };
+const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.00, weizen: 5.00, softdrink: 2.50, whiskey: 4.00, wein: 3.00, bierfrei: 3.00 };
 const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin/Cocktail', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink', whiskey: '🥃 Whiskey', wein: '🍷 Wein', bierfrei: '🍺 Alkoholfreies Bier' };
 // Kategorisierung für Sortierung und Farbcodierung: rot = alkoholisch, grün = alkoholfrei
 const ALC_TYPES = ['bier', 'weizen', 'schnaps', 'whiskey', 'wein', 'gin'];
@@ -771,7 +781,7 @@ function render() {
       <div class="drink-buttons">
         <button class="drink-btn nonalc" onclick="addDrink('${g.id}','wasser')">💧 Wasser<small>+2,00 €</small></button>
         <button class="drink-btn nonalc" onclick="addDrink('${g.id}','softdrink')">🥤 Softdrink<small>+2,50 €</small></button>
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')">🍺 Alkoholfrei<small>+2,50 €</small></button>
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')">🍺 Alkoholfrei<small>+3,00 €</small></button>
       </div>
       ${(g.actionLog && g.actionLog.length > 0) ? `<button class="undo-btn" onclick="undoLastDrink('${g.id}')">↩ Letztes Getränk rückgängig</button>` : ''}
       ${tallyHtml}
