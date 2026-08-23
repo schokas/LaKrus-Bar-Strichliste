@@ -187,19 +187,24 @@
   }
   .drink-btn {
     border: none;
-    border-radius: 10px;
-    padding: 12px 6px;
+    border-radius: 8px;
+    padding: 8px 4px;
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
     color: #1a1410;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
+    line-height: 1.15;
+  }
+  .drink-btn .icon {
+    font-size: 1.05rem;
+    line-height: 1;
   }
   .drink-btn small {
     font-weight: 400;
-    font-size: 0.75rem;
+    font-size: 0.64rem;
     opacity: 0.75;
   }
   .drink-btn.alc { background: var(--alc); color: #fff; }
@@ -445,10 +450,12 @@
     backdrop-filter: blur(6px);
     border-top: 1px solid var(--card-border);
     padding: 14px 16px;
+    font-size: 1rem;
+  }
+  .grand-total-inner {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 1rem;
   }
   .grand-total-bar .amount {
     font-size: 1.3rem;
@@ -462,9 +469,68 @@
     margin-top: -6px;
     margin-bottom: 10px;
   }
+
+  /* ===== iPad / Tablet Anpassungen ===== */
+  @media (min-width: 700px) {
+    body {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    .app-container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.7rem;
+    }
+    .subtitle {
+      font-size: 0.95rem;
+    }
+    /* Gästekarten als Grid nebeneinander statt einer langen Liste */
+    #guestList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+      align-items: start;
+    }
+    .guest-card {
+      margin-bottom: 0;
+    }
+    /* Etwas großzügigere, aber weiterhin kompakte Getränke-Buttons */
+    .drink-btn {
+      padding: 11px 6px;
+      font-size: 0.8rem;
+      border-radius: 10px;
+    }
+    .drink-btn .icon {
+      font-size: 1.3rem;
+    }
+    .drink-btn small {
+      font-size: 0.7rem;
+    }
+    /* Alkoholische Getränke passen auf eine Zeile mit 6 Spalten, alkoholfrei auf 3 */
+    .guest-card .alc-grid {
+      grid-template-columns: repeat(6, 1fr);
+    }
+    .guest-card .nonalc-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grand-total-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+  }
+
+  @media (min-width: 1000px) {
+    #guestList {
+      grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    }
+  }
 </style>
 </head>
 <body>
+
+<div class="app-container">
 
 <h1>🍻 Strichliste</h1>
 <div class="subtitle">Tippe pro Gast auf die Getränke, der Betrag rechnet sich automatisch</div>
@@ -504,9 +570,13 @@
 <div id="guestList"></div>
 <div id="emptyState" class="empty-state" style="display:none;">Noch keine Gäste. Leg oben einen an!</div>
 
+</div>
+
 <div class="grand-total-bar">
-  <span>Gesamt offen</span>
-  <span class="amount" id="grandTotal">0,00 €</span>
+  <div class="grand-total-inner">
+    <span>Gesamt offen</span>
+    <span class="amount" id="grandTotal">0,00 €</span>
+  </div>
 </div>
 
 <script>
@@ -567,10 +637,17 @@ function addGuest() {
   const input = document.getElementById('guestNameInput');
   const name = input.value.trim();
   if (!name) return;
-  guests.push({ id: Date.now().toString(), name: name, drinks: { bier: 0, schnaps: 0, gin: 0, wasser: 0, weizen: 0, softdrink: 0, whiskey: 0, wein: 0, bierfrei: 0 }, actionLog: [] });
+  const newId = Date.now().toString();
+  guests.push({ id: newId, name: name, drinks: { bier: 0, schnaps: 0, gin: 0, wasser: 0, weizen: 0, softdrink: 0, whiskey: 0, wein: 0, bierfrei: 0 }, actionLog: [] });
   input.value = '';
   scheduleSave();
   render();
+
+  // Direkt zur neuen Gästekarte scrollen, damit sofort Getränke eingegeben werden können
+  setTimeout(() => {
+    const card = document.getElementById('guest-card-' + newId);
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 150);
 }
 
 function addDrink(guestId, type) {
@@ -769,19 +846,19 @@ function render() {
       </div>
       ${reorderBanner}
       <div class="drink-category-label alc-label">🔴 Alkoholisch</div>
-      <div class="drink-buttons">
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','bier')">🍺 Bier<small>+3,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','weizen')">🌾 Weizen Bier<small>+5,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','schnaps')">🥃 Schnaps<small>+2,50 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','whiskey')">🥃 Whiskey<small>+4,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','wein')">🍷 Wein<small>+3,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','gin')">🍸 Gin/Cocktail<small>+5,00 €</small></button>
+      <div class="drink-buttons alc-grid">
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','bier')"><span class="icon">🍺</span>Bier<small>+3,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','weizen')"><span class="icon">🌾</span>Weizen Bier<small>+5,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','schnaps')"><span class="icon">🥃</span>Schnaps<small>+2,50 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','whiskey')"><span class="icon">🥃</span>Whiskey<small>+4,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','wein')"><span class="icon">🍷</span>Wein<small>+3,00 €</small></button>
+        <button class="drink-btn alc" onclick="addDrink('${g.id}','gin')"><span class="icon">🍸</span>Gin/Cocktail<small>+5,00 €</small></button>
       </div>
       <div class="drink-category-label nonalc-label">🟢 Alkoholfrei</div>
-      <div class="drink-buttons">
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','wasser')">💧 Wasser<small>+2,00 €</small></button>
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','softdrink')">🥤 Softdrink<small>+2,50 €</small></button>
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')">🍺 Alkoholfrei<small>+3,00 €</small></button>
+      <div class="drink-buttons nonalc-grid">
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','wasser')"><span class="icon">💧</span>Wasser<small>+2,00 €</small></button>
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','softdrink')"><span class="icon">🥤</span>Softdrink<small>+2,50 €</small></button>
+        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')"><span class="icon">🍺</span>Alkoholfrei<small>+3,00 €</small></button>
       </div>
       ${(g.actionLog && g.actionLog.length > 0) ? `<button class="undo-btn" onclick="undoLastDrink('${g.id}')">↩ Letztes Getränk rückgängig</button>` : ''}
       ${tallyHtml}
@@ -1049,7 +1126,7 @@ loadData();
 // Fallback, wenn wirklich kein Internet verfügbar ist.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const swCode = `
-    const CACHE = 'strichliste-v2';
+    const CACHE = 'strichliste-v3';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
