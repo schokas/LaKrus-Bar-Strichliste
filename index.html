@@ -100,6 +100,42 @@
     font-weight: 600;
     font-size: 1rem;
   }
+  .guest-search-wrap {
+    margin-bottom: 12px;
+  }
+  .guest-search-input {
+    width: 100%;
+    background: rgba(42, 32, 26, 0.85);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 0.9rem;
+  }
+  .guest-search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .guest-header-clickable {
+    cursor: pointer;
+  }
+  .guest-collapse-icon {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-left: 6px;
+    transition: transform 0.2s ease;
+  }
+  .guest-card.collapsed .guest-collapse-icon {
+    transform: rotate(-90deg);
+  }
+  .guest-card.collapsed .guest-header {
+    margin-bottom: 0;
+  }
+  .guest-collapsed-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
   .guest-card {
     background: rgba(42, 32, 26, 0.88);
     border: 1px solid var(--card-border);
@@ -310,6 +346,153 @@
     padding: 14px;
     margin-bottom: 20px;
     backdrop-filter: blur(4px);
+  }
+  .settings-section {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--card-border);
+  }
+  .price-edit-toggle {
+    opacity: 0.75;
+    font-size: 0.8rem;
+  }
+  .price-edit-panel {
+    background: rgba(42, 32, 26, 0.9);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .price-edit-header {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 4px;
+  }
+  .price-edit-hint {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+  }
+  .price-edit-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-top: 1px solid var(--card-border);
+  }
+  .price-edit-row:first-child {
+    border-top: none;
+  }
+  .price-edit-row label {
+    font-size: 0.88rem;
+    flex: 1;
+  }
+  .price-edit-row .price-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .price-edit-row input {
+    width: 70px;
+    background: rgba(11, 11, 11, 0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 6px 8px;
+    color: var(--text);
+    font-size: 0.9rem;
+    text-align: right;
+  }
+  .price-edit-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .price-edit-row .price-unit {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+  .price-edit-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .price-edit-actions .btn-pay {
+    flex: 1;
+  }
+  .price-edit-actions .btn-cancel {
+    border: 1px solid var(--card-border) !important;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 0.85rem;
+    background: transparent;
+    color: var(--text-dim);
+  }
+  .price-saved-flash {
+    color: var(--nonalc);
+    font-size: 0.8rem;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .price-error-flash {
+    color: var(--alc);
+    font-size: 0.78rem;
+    margin-top: 8px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .price-remove-btn {
+    background: transparent;
+    border: none;
+    font-size: 0.9rem;
+    padding: 2px 4px;
+    opacity: 0.7;
+  }
+  .price-remove-btn:active {
+    opacity: 1;
+  }
+  .add-drink-section {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--card-border);
+  }
+  .add-drink-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .add-drink-row input[type="text"],
+  .add-drink-row select {
+    flex: 1;
+    background: rgba(11, 11, 11, 0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+  .add-drink-row .new-drink-icon {
+    flex: 0 0 60px;
+    text-align: center;
+  }
+  .add-drink-row .price-input-wrap {
+    flex: 1;
+  }
+  .add-drink-row .price-input-wrap input {
+    width: 100%;
+  }
+  .btn-add-drink {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    color: #1a1410;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .btn-add-drink:active {
+    background: var(--accent-dark);
   }
   .history-header {
     display: flex;
@@ -535,21 +718,15 @@
 <h1>🍻 Strichliste</h1>
 <div class="subtitle">Tippe pro Gast auf die Getränke, der Betrag rechnet sich automatisch</div>
 
-<div class="prices">
-  <div class="price-chip">🍺 Bier – 3,00 €</div>
-  <div class="price-chip">🌾 Weizen Bier – 5,00 €</div>
-  <div class="price-chip">🥃 Schnaps – 2,50 €</div>
-  <div class="price-chip">🥃 Whiskey – 4,00 €</div>
-  <div class="price-chip">🍷 Wein – 3,00 €</div>
-  <div class="price-chip">🍸 Gin/Cocktail – 5,00 €</div>
-  <div class="price-chip">💧 Wasser – 2,00 €</div>
-  <div class="price-chip">🥤 Softdrink – 2,50 €</div>
-  <div class="price-chip">🍺 Alkoholfreies Bier – 3,00 €</div>
-</div>
+<div id="priceList" class="prices"></div>
 
 <div class="add-guest">
   <input type="text" id="guestNameInput" placeholder="Name des Gastes..." maxlength="30">
   <button onclick="addGuest()">+ Gast</button>
+</div>
+
+<div id="guestSearchWrap" class="guest-search-wrap" style="display:none;">
+  <input type="text" id="guestSearchInput" class="guest-search-input" placeholder="🔍 Gast suchen..." oninput="onGuestSearch()">
 </div>
 
 <button id="historyToggle" class="history-toggle" onclick="toggleHistory()">📋 Verlauf bezahlter Rechnungen anzeigen</button>
@@ -568,7 +745,22 @@
 </div>
 
 <div id="guestList"></div>
+<div id="noSearchResults" class="empty-state" style="display:none;">Kein Gast gefunden.</div>
 <div id="emptyState" class="empty-state" style="display:none;">Noch keine Gäste. Leg oben einen an!</div>
+
+<div class="settings-section">
+  <button id="priceEditToggle" class="history-toggle price-edit-toggle" onclick="togglePriceEdit()">⚙️ Getränkepreise bearbeiten</button>
+
+  <div id="priceEditPanel" class="price-edit-panel" style="display:none;">
+    <div class="price-edit-header">Preise ändern</div>
+    <div class="price-edit-hint">Gilt sofort für neue Bestellungen. Bereits offene, noch nicht bezahlte Runden übernehmen den neuen Preis ebenfalls. Mit 🗑️ lässt sich jedes Getränk entfernen — "Auf Standard zurücksetzen" bringt gelöschte Standardgetränke und deren Preise wieder zurück.</div>
+    <div id="priceEditForm"></div>
+    <div class="price-edit-actions">
+      <button class="btn-pay" onclick="savePriceEdits()">✓ Preise speichern</button>
+      <button class="btn-cancel" onclick="resetPriceEdits()">Auf Standard zurücksetzen</button>
+    </div>
+  </div>
+</div>
 
 </div>
 
@@ -580,15 +772,27 @@
 </div>
 
 <script>
-const PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.00, weizen: 5.00, softdrink: 2.50, whiskey: 4.00, wein: 3.00, bierfrei: 3.00 };
-const LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin/Cocktail', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink', whiskey: '🥃 Whiskey', wein: '🍷 Wein', bierfrei: '🍺 Alkoholfreies Bier' };
+const DEFAULT_PRICES = { bier: 3.00, schnaps: 2.50, gin: 5.00, wasser: 2.00, weizen: 5.00, softdrink: 2.50, whiskey: 4.00, wein: 3.00, bierfrei: 3.00 };
+const DEFAULT_LABELS = { bier: '🍺 Bier', schnaps: '🥃 Schnaps', gin: '🍸 Gin/Cocktail', wasser: '💧 Wasser', weizen: '🌾 Weizen Bier', softdrink: '🥤 Softdrink', whiskey: '🥃 Whiskey', wein: '🍷 Wein', bierfrei: '🍺 Alkoholfreies Bier' };
+const DEFAULT_ICONS = { bier: '🍺', schnaps: '🥃', gin: '🍸', wasser: '💧', weizen: '🌾', softdrink: '🥤', whiskey: '🥃', wein: '🍷', bierfrei: '🍺' };
+const DEFAULT_SHORT_NAMES = { bier: 'Bier', schnaps: 'Schnaps', gin: 'Gin/Cocktail', wasser: 'Wasser', weizen: 'Weizen Bier', softdrink: 'Softdrink', whiskey: 'Whiskey', wein: 'Wein', bierfrei: 'Alkoholfrei' };
+const DEFAULT_ALC_TYPES = ['bier', 'weizen', 'schnaps', 'whiskey', 'wein', 'gin'];
+const DEFAULT_NONALC_TYPES = ['wasser', 'softdrink', 'bierfrei'];
+
+let PRICES = { ...DEFAULT_PRICES };
+let LABELS = { ...DEFAULT_LABELS };
+let ICONS = { ...DEFAULT_ICONS };
+let SHORT_NAMES = { ...DEFAULT_SHORT_NAMES };
 // Kategorisierung für Sortierung und Farbcodierung: rot = alkoholisch, grün = alkoholfrei
-const ALC_TYPES = ['bier', 'weizen', 'schnaps', 'whiskey', 'wein', 'gin'];
-const NONALC_TYPES = ['wasser', 'softdrink', 'bierfrei'];
-const DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+let ALC_TYPES = [...DEFAULT_ALC_TYPES];
+let NONALC_TYPES = [...DEFAULT_NONALC_TYPES];
+let DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+let customDrinkIds = []; // IDs vom Nutzer hinzugefügter Getränke (löschbar, im Gegensatz zu den Standardgetränken)
 let guests = [];
 let paidHistory = [];
 let historyVisible = false;
+let priceEditVisible = false;
+let historyAutoCollapseTimer = null;
 let saveTimer = null;
 let knownGuestIds = new Set();
 let newHistoryEntryId = null;
@@ -599,7 +803,25 @@ function fmt(n) {
   return n.toFixed(2).replace('.', ',') + ' €';
 }
 
+function buildDrinkButtonsHtml(guestId, types, categoryClass) {
+  return types.map(type => `
+    <button class="drink-btn ${categoryClass}" onclick="addDrink('${guestId}','${type}')">
+      <span class="icon">${ICONS[type]}</span>${SHORT_NAMES[type]}<small>+${fmt(PRICES[type])}</small>
+    </button>
+  `).join('');
+}
+
+function renderPriceChips() {
+  const wrap = document.getElementById('priceList');
+  if (!wrap) return;
+  wrap.innerHTML = DRINK_ORDER.map(type =>
+    `<div class="price-chip">${LABELS[type]} – ${fmt(PRICES[type])}</div>`
+  ).join('');
+}
+
 function loadData() {
+  loadPrices();
+  loadCustomDrinks();
   try {
     const raw = localStorage.getItem('bar-guests');
     if (raw) {
@@ -617,8 +839,114 @@ function loadData() {
     paidHistory = [];
   }
   knownGuestIds = new Set(guests.map(g => g.id));
+  renderPriceChips();
   render();
   renderHistory();
+}
+
+function loadPrices() {
+  try {
+    const raw = localStorage.getItem('bar-prices');
+    if (raw) {
+      const saved = JSON.parse(raw);
+      PRICES = { ...DEFAULT_PRICES, ...saved };
+    }
+  } catch (e) {
+    PRICES = { ...DEFAULT_PRICES };
+  }
+}
+
+function savePricesToStorage() {
+  try {
+    localStorage.setItem('bar-prices', JSON.stringify(PRICES));
+  } catch (e) {
+    console.error('Preise konnten nicht gespeichert werden', e);
+  }
+}
+
+// Nutzerdefinierte Getränke: werden als Liste {id, name, icon, category, price} gespeichert
+// und beim Laden in PRICES/LABELS/ICONS/SHORT_NAMES/ALC_TYPES/NONALC_TYPES/DRINK_ORDER eingemischt.
+let removedDefaultIds = []; // IDs von Standardgetränken, die der Nutzer gelöscht hat
+
+function loadCustomDrinks() {
+  // Auf Standard zurücksetzen, dann eigene Getränke wieder einmischen
+  PRICES = { ...DEFAULT_PRICES, ...PRICES };
+  LABELS = { ...DEFAULT_LABELS };
+  ICONS = { ...DEFAULT_ICONS };
+  SHORT_NAMES = { ...DEFAULT_SHORT_NAMES };
+  ALC_TYPES = [...DEFAULT_ALC_TYPES];
+  NONALC_TYPES = [...DEFAULT_NONALC_TYPES];
+  customDrinkIds = [];
+
+  try {
+    const rawRemoved = localStorage.getItem('bar-removed-defaults');
+    removedDefaultIds = rawRemoved ? JSON.parse(rawRemoved) : [];
+  } catch (e) {
+    removedDefaultIds = [];
+  }
+
+  // Vom Nutzer gelöschte Standardgetränke aus allen Listen entfernen
+  removedDefaultIds.forEach(id => {
+    delete PRICES[id];
+    delete LABELS[id];
+    delete ICONS[id];
+    delete SHORT_NAMES[id];
+    ALC_TYPES = ALC_TYPES.filter(t => t !== id);
+    NONALC_TYPES = NONALC_TYPES.filter(t => t !== id);
+  });
+
+  try {
+    const raw = localStorage.getItem('bar-custom-drinks');
+    if (raw) {
+      const customDrinks = JSON.parse(raw);
+      customDrinks.forEach(d => {
+        applyCustomDrink(d, false);
+      });
+    }
+  } catch (e) {
+    console.error('Eigene Getränke konnten nicht geladen werden', e);
+  }
+
+  DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+}
+
+function saveRemovedDefaultsToStorage() {
+  try {
+    localStorage.setItem('bar-removed-defaults', JSON.stringify(removedDefaultIds));
+  } catch (e) {
+    console.error('Konnte gelöschte Standardgetränke nicht speichern', e);
+  }
+}
+
+function applyCustomDrink(d, isNew) {
+  LABELS[d.id] = `${d.icon} ${d.name}`;
+  ICONS[d.id] = d.icon;
+  SHORT_NAMES[d.id] = d.name;
+  if (PRICES[d.id] === undefined || isNew) PRICES[d.id] = d.price;
+  if (d.category === 'alc') {
+    if (!ALC_TYPES.includes(d.id)) ALC_TYPES.push(d.id);
+  } else {
+    if (!NONALC_TYPES.includes(d.id)) NONALC_TYPES.push(d.id);
+  }
+  if (!customDrinkIds.includes(d.id)) customDrinkIds.push(d.id);
+}
+
+function getCustomDrinksForStorage() {
+  return customDrinkIds.map(id => ({
+    id,
+    name: SHORT_NAMES[id],
+    icon: ICONS[id],
+    category: ALC_TYPES.includes(id) ? 'alc' : 'nonalc',
+    price: PRICES[id]
+  }));
+}
+
+function saveCustomDrinksToStorage() {
+  try {
+    localStorage.setItem('bar-custom-drinks', JSON.stringify(getCustomDrinksForStorage()));
+  } catch (e) {
+    console.error('Eigene Getränke konnten nicht gespeichert werden', e);
+  }
 }
 
 function scheduleSave() {
@@ -767,26 +1095,58 @@ function cancelConfirm(guestId) {
   render();
 }
 
+let guestSearchQuery = '';
+
+function onGuestSearch() {
+  const input = document.getElementById('guestSearchInput');
+  guestSearchQuery = input.value.trim().toLowerCase();
+  render();
+}
+
+function toggleGuestCollapse(guestId) {
+  const g = guests.find(g => g.id === guestId);
+  if (!g) return;
+  g.collapsed = !g.collapsed;
+  render();
+}
+
 function render() {
   const list = document.getElementById('guestList');
   const empty = document.getElementById('emptyState');
+  const noResults = document.getElementById('noSearchResults');
+  const searchWrap = document.getElementById('guestSearchWrap');
   list.innerHTML = '';
+
+  // Suchfeld nur einblenden, wenn es sich lohnt (ab 4 aktiven Gästen)
+  if (searchWrap) {
+    searchWrap.style.display = guests.length >= 4 ? 'block' : 'none';
+  }
 
   if (guests.length === 0) {
     empty.style.display = 'block';
+    noResults.style.display = 'none';
   } else {
     empty.style.display = 'none';
   }
 
+  // Gesamtsumme immer über ALLE offenen Gäste berechnen, unabhängig von der Suche
   let grandTotal = 0;
+  guests.forEach(g => { grandTotal += guestTotal(g); });
 
-  guests.forEach(g => {
+  const visibleGuests = guestSearchQuery
+    ? guests.filter(g => g.name.toLowerCase().includes(guestSearchQuery))
+    : guests;
+
+  if (guests.length > 0) {
+    noResults.style.display = (guestSearchQuery && visibleGuests.length === 0) ? 'block' : 'none';
+  }
+
+  visibleGuests.forEach(g => {
     const total = guestTotal(g);
-    grandTotal += total;
 
     const card = document.createElement('div');
     card.id = 'guest-card-' + g.id;
-    card.className = 'guest-card' + (knownGuestIds.has(g.id) ? '' : ' entering');
+    card.className = 'guest-card' + (knownGuestIds.has(g.id) ? '' : ' entering') + (g.collapsed ? ' collapsed' : '');
 
     // Absicherung: alte gespeicherte Gäste könnten neue Felder noch nicht haben
     DRINK_ORDER.forEach(type => {
@@ -840,29 +1200,24 @@ function render() {
       : '';
 
     card.innerHTML = `
-      <div class="guest-header">
-        <div class="guest-name">${g.name}</div>
+      <div class="guest-header guest-header-clickable" onclick="toggleGuestCollapse('${g.id}')">
+        <div class="guest-name">${g.name}<span class="guest-collapse-icon">▾</span></div>
         <div class="guest-total">${fmt(total)}</div>
       </div>
+      ${g.collapsed ? `<div class="guest-collapsed-hint">Eingeklappt — antippen zum Öffnen</div>` : `
       ${reorderBanner}
       <div class="drink-category-label alc-label">🔴 Alkoholisch</div>
       <div class="drink-buttons alc-grid">
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','bier')"><span class="icon">🍺</span>Bier<small>+3,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','weizen')"><span class="icon">🌾</span>Weizen Bier<small>+5,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','schnaps')"><span class="icon">🥃</span>Schnaps<small>+2,50 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','whiskey')"><span class="icon">🥃</span>Whiskey<small>+4,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','wein')"><span class="icon">🍷</span>Wein<small>+3,00 €</small></button>
-        <button class="drink-btn alc" onclick="addDrink('${g.id}','gin')"><span class="icon">🍸</span>Gin/Cocktail<small>+5,00 €</small></button>
+        ${buildDrinkButtonsHtml(g.id, ALC_TYPES, 'alc')}
       </div>
       <div class="drink-category-label nonalc-label">🟢 Alkoholfrei</div>
       <div class="drink-buttons nonalc-grid">
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','wasser')"><span class="icon">💧</span>Wasser<small>+2,00 €</small></button>
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','softdrink')"><span class="icon">🥤</span>Softdrink<small>+2,50 €</small></button>
-        <button class="drink-btn nonalc" onclick="addDrink('${g.id}','bierfrei')"><span class="icon">🍺</span>Alkoholfrei<small>+3,00 €</small></button>
+        ${buildDrinkButtonsHtml(g.id, NONALC_TYPES, 'nonalc')}
       </div>
       ${(g.actionLog && g.actionLog.length > 0) ? `<button class="undo-btn" onclick="undoLastDrink('${g.id}')">↩ Letztes Getränk rückgängig</button>` : ''}
       ${tallyHtml}
       ${footerHtml}
+      `}
     `;
     list.appendChild(card);
   });
@@ -884,6 +1239,7 @@ function csvValue(v) {
 
 async function exportHistoryToExcel() {
   const exportBtn = document.querySelector('.btn-export');
+  if (historyVisible) startHistoryAutoCollapse();
   if (paidHistory.length === 0) {
     if (exportBtn) {
       const original = exportBtn.textContent;
@@ -893,8 +1249,7 @@ async function exportHistoryToExcel() {
     return;
   }
 
-  const drinkHeaderNames = { bier: 'Bier', weizen: 'Weizen Bier', schnaps: 'Schnaps', whiskey: 'Whiskey', wein: 'Wein', gin: 'Gin/Cocktail', wasser: 'Wasser', softdrink: 'Softdrink', bierfrei: 'Alkoholfreies Bier' };
-  const headers = ['Datum', 'Uhrzeit', 'Gast', ...DRINK_ORDER.map(t => drinkHeaderNames[t]), 'Gesamtbetrag (€)'];
+  const headers = ['Datum', 'Uhrzeit', 'Gast', ...DRINK_ORDER.map(t => SHORT_NAMES[t]), 'Gesamtbetrag (€)'];
   const rows = [headers];
 
   // Chronologisch aufsteigend exportieren (ältestes zuerst)
@@ -963,19 +1318,229 @@ async function exportHistoryToExcel() {
   }, 100);
 }
 
+function togglePriceEdit() {
+  priceEditVisible = !priceEditVisible;
+  const panel = document.getElementById('priceEditPanel');
+  const btn = document.getElementById('priceEditToggle');
+  panel.style.display = priceEditVisible ? 'block' : 'none';
+  btn.textContent = priceEditVisible ? '⚙️ Preise ausblenden' : '⚙️ Getränkepreise bearbeiten';
+  if (priceEditVisible) renderPriceEditForm();
+}
+
+function renderPriceEditForm() {
+  const form = document.getElementById('priceEditForm');
+  if (!form) return;
+
+  const rowsFor = (types) => types.map(type => `
+    <div class="price-edit-row">
+      <label for="price-input-${type}">${ICONS[type]} ${SHORT_NAMES[type]}</label>
+      <div class="price-input-wrap">
+        <input type="number" id="price-input-${type}" min="0" step="0.10" value="${PRICES[type].toFixed(2)}">
+        <span class="price-unit">€</span>
+        <button class="price-remove-btn" onclick="deleteDrink('${type}')" title="Getränk entfernen">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+
+  form.innerHTML = `
+    <div class="drink-category-label alc-label">🔴 Alkoholisch</div>
+    ${rowsFor(ALC_TYPES)}
+    <div class="drink-category-label nonalc-label" style="margin-top:10px;">🟢 Alkoholfrei</div>
+    ${rowsFor(NONALC_TYPES)}
+    <div id="priceSavedFlash"></div>
+
+    <div class="add-drink-section">
+      <div class="price-edit-header" style="margin-top:16px;">Neues Getränk hinzufügen</div>
+      <div class="add-drink-row">
+        <input type="text" id="newDrinkName" placeholder="Name (z. B. Radler)" maxlength="24">
+        <input type="text" id="newDrinkIcon" placeholder="Icon" maxlength="4" class="new-drink-icon">
+      </div>
+      <div class="add-drink-row">
+        <select id="newDrinkCategory">
+          <option value="alc">🔴 Alkoholisch</option>
+          <option value="nonalc">🟢 Alkoholfrei</option>
+        </select>
+        <div class="price-input-wrap">
+          <input type="number" id="newDrinkPrice" min="0" step="0.10" placeholder="0,00">
+          <span class="price-unit">€</span>
+        </div>
+      </div>
+      <button class="btn-add-drink" onclick="addCustomDrinkFromForm()">+ Getränk hinzufügen</button>
+      <div id="addDrinkFlash"></div>
+    </div>
+  `;
+}
+
+function savePriceEdits() {
+  const updated = { ...PRICES };
+  let anyInvalid = false;
+
+  DRINK_ORDER.forEach(type => {
+    const input = document.getElementById('price-input-' + type);
+    if (!input) return;
+    const value = parseFloat(input.value.replace(',', '.'));
+    if (isNaN(value) || value < 0) {
+      anyInvalid = true;
+      input.style.borderColor = 'var(--danger)';
+    } else {
+      updated[type] = Math.round(value * 100) / 100;
+      input.style.borderColor = '';
+    }
+  });
+
+  if (anyInvalid) return;
+
+  PRICES = updated;
+  savePricesToStorage();
+  renderPriceChips();
+  render();
+
+  const flash = document.getElementById('priceSavedFlash');
+  if (flash) {
+    flash.textContent = '✓ Preise gespeichert';
+    flash.className = 'price-saved-flash';
+    setTimeout(() => { if (flash) flash.textContent = ''; }, 2500);
+  }
+}
+
+function resetPriceEdits() {
+  // Gelöschte Standardgetränke wiederherstellen
+  removedDefaultIds = [];
+  saveRemovedDefaultsToStorage();
+
+  ALC_TYPES = [...DEFAULT_ALC_TYPES, ...ALC_TYPES.filter(t => !DEFAULT_ALC_TYPES.includes(t) && !DEFAULT_NONALC_TYPES.includes(t))];
+  NONALC_TYPES = [...DEFAULT_NONALC_TYPES, ...NONALC_TYPES.filter(t => !DEFAULT_ALC_TYPES.includes(t) && !DEFAULT_NONALC_TYPES.includes(t))];
+  DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+
+  DEFAULT_ALC_TYPES.concat(DEFAULT_NONALC_TYPES).forEach(type => {
+    PRICES[type] = DEFAULT_PRICES[type];
+    LABELS[type] = DEFAULT_LABELS[type];
+    ICONS[type] = DEFAULT_ICONS[type];
+    SHORT_NAMES[type] = DEFAULT_SHORT_NAMES[type];
+  });
+
+  savePricesToStorage();
+  renderPriceChips();
+  render();
+  renderPriceEditForm();
+}
+
+function addCustomDrinkFromForm() {
+  const nameInput = document.getElementById('newDrinkName');
+  const iconInput = document.getElementById('newDrinkIcon');
+  const categorySelect = document.getElementById('newDrinkCategory');
+  const priceInput = document.getElementById('newDrinkPrice');
+  const flash = document.getElementById('addDrinkFlash');
+
+  const name = nameInput.value.trim();
+  const category = categorySelect.value;
+  const price = parseFloat(priceInput.value.replace(',', '.'));
+  let icon = iconInput.value.trim();
+
+  if (!name) {
+    nameInput.style.borderColor = 'var(--danger)';
+    return;
+  }
+  nameInput.style.borderColor = '';
+
+  if (isNaN(price) || price < 0) {
+    priceInput.style.borderColor = 'var(--danger)';
+    return;
+  }
+  priceInput.style.borderColor = '';
+
+  if (!icon) icon = category === 'alc' ? '🍹' : '🥤';
+
+  // Eindeutige ID erzeugen, unabhängig vom eingegebenen Namen
+  const id = 'custom' + Date.now();
+
+  applyCustomDrink({ id, name, icon, category, price: Math.round(price * 100) / 100 }, true);
+  DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+
+  savePricesToStorage();
+  saveCustomDrinksToStorage();
+  renderPriceChips();
+  render();
+  renderPriceEditForm();
+
+  const newFlash = document.getElementById('addDrinkFlash');
+  if (newFlash) {
+    newFlash.textContent = `✓ "${name}" wurde hinzugefügt`;
+    newFlash.className = 'price-saved-flash';
+    setTimeout(() => { if (newFlash) newFlash.textContent = ''; }, 2500);
+  }
+}
+
+function deleteDrink(id) {
+  // Schutz: nicht löschen, wenn ein offener (unbezahlter) Gast das Getränk noch gebucht hat,
+  // sonst würden bereits erfasste Runden unbemerkt aus der Rechnung verschwinden.
+  const stillInUse = guests.some(g => (g.drinks[id] || 0) > 0);
+  if (stillInUse) {
+    const flash = document.getElementById('addDrinkFlash');
+    if (flash) {
+      flash.textContent = `⚠️ "${SHORT_NAMES[id]}" ist noch bei einem offenen Gast gebucht — erst dort entfernen oder abrechnen.`;
+      flash.className = 'price-error-flash';
+    }
+    return;
+  }
+
+  const isDefault = DEFAULT_ALC_TYPES.includes(id) || DEFAULT_NONALC_TYPES.includes(id);
+
+  delete PRICES[id];
+  delete LABELS[id];
+  delete ICONS[id];
+  delete SHORT_NAMES[id];
+  ALC_TYPES = ALC_TYPES.filter(t => t !== id);
+  NONALC_TYPES = NONALC_TYPES.filter(t => t !== id);
+  DRINK_ORDER = [...ALC_TYPES, ...NONALC_TYPES];
+  customDrinkIds = customDrinkIds.filter(t => t !== id);
+
+  if (isDefault) {
+    if (!removedDefaultIds.includes(id)) removedDefaultIds.push(id);
+    saveRemovedDefaultsToStorage();
+  }
+
+  savePricesToStorage();
+  saveCustomDrinksToStorage();
+  renderPriceChips();
+  render();
+  renderPriceEditForm();
+}
+
 function toggleHistory() {
   historyVisible = !historyVisible;
   const panel = document.getElementById('historyPanel');
   const btn = document.getElementById('historyToggle');
   panel.style.display = historyVisible ? 'block' : 'none';
   btn.textContent = historyVisible ? '📋 Verlauf ausblenden' : '📋 Verlauf bezahlter Rechnungen anzeigen';
-  if (historyVisible) renderHistory();
+  if (historyVisible) {
+    renderHistory();
+    startHistoryAutoCollapse();
+  } else {
+    clearTimeout(historyAutoCollapseTimer);
+  }
+}
+
+// Klappt den Verlauf automatisch nach 1 Minute Inaktivität wieder ein,
+// damit er nicht versehentlich dauerhaft offen bleibt.
+function startHistoryAutoCollapse() {
+  clearTimeout(historyAutoCollapseTimer);
+  historyAutoCollapseTimer = setTimeout(() => {
+    if (historyVisible) {
+      historyVisible = false;
+      const panel = document.getElementById('historyPanel');
+      const btn = document.getElementById('historyToggle');
+      panel.style.display = 'none';
+      btn.textContent = '📋 Verlauf bezahlter Rechnungen anzeigen';
+    }
+  }, 60000);
 }
 
 function deleteHistoryEntry(entryId) {
   paidHistory = paidHistory.filter(h => h.id !== entryId);
   scheduleSave();
   renderHistory();
+  if (historyVisible) startHistoryAutoCollapse();
 }
 
 function cancelReopenConfirm(entryId) {
@@ -983,6 +1548,7 @@ function cancelReopenConfirm(entryId) {
   if (!h) return;
   h.reopenConfirm = false;
   renderHistory();
+  if (historyVisible) startHistoryAutoCollapse();
 }
 
 function reopenHistoryEntry(entryId) {
@@ -993,6 +1559,7 @@ function reopenHistoryEntry(entryId) {
     paidHistory.forEach(x => { x.reopenConfirm = false; });
     h.reopenConfirm = true;
     renderHistory();
+    if (historyVisible) startHistoryAutoCollapse();
     return;
   }
 
@@ -1042,6 +1609,7 @@ function clearHistory() {
       }
     }, 3000);
   }
+  if (historyVisible) startHistoryAutoCollapse();
 }
 
 function renderHistory() {
