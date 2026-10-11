@@ -192,6 +192,9 @@
     font-weight: 700;
     color: var(--accent);
   }
+  .guest-total { text-align: right; }
+  .guest-total-label { font-size: .65rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: .8; }
+  .guest-total-sub { font-size: .7rem; font-weight: 400; opacity: .7; letter-spacing: 0; font-family: sans-serif; }
   .reorder-banner {
     display: flex;
     flex-direction: column;
@@ -1464,7 +1467,7 @@ function render() {
 
   // Gesamtsumme immer über ALLE offenen Gäste berechnen, unabhängig von der Suche
   let grandTotal = 0;
-  guests.forEach(g => { grandTotal += guestTotal(g); });
+  guests.forEach(g => { const t = guestTotal(g); grandTotal += g.previouslyPaidTotal !== undefined ? Math.max(0, t - g.previouslyPaidTotal) : t; });
 
   const visibleGuests = guestSearchQuery
     ? guests.filter(g => g.name.toLowerCase().includes(guestSearchQuery))
@@ -1539,7 +1542,7 @@ function render() {
     card.innerHTML = `
       <div class="guest-header guest-header-clickable" onclick="toggleGuestCollapse('${g.id}')">
         <div class="guest-name">${esc(g.name)}<span class="guest-collapse-icon">▾</span></div>
-        <div class="guest-total">${fmt(total)}</div>
+        <div class="guest-total">${additionalDue !== null ? `<div class="guest-total-label">Noch offen</div>${fmt(additionalDue)}<div class="guest-total-sub">Gesamt ${fmt(total)} · bezahlt ${fmt(g.previouslyPaidTotal)}</div>` : fmt(total)}</div>
       </div>
       ${g.collapsed ? `<div class="guest-collapsed-hint">Eingeklappt — antippen zum Öffnen</div>` : `
       ${inSplit ? buildSplitPanelHtml(g, total) : `
@@ -2034,7 +2037,7 @@ loadData();
 // Fallback, wenn wirklich kein Internet verfügbar ist.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const swCode = `
-    const CACHE = 'strichliste-v5';
+    const CACHE = 'strichliste-v6';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
