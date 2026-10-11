@@ -708,6 +708,108 @@
   .btn-pay { background: #ffffff; color: #000000; }
   .reorder-banner, .history-entry-reorder-tag { border-radius: 3px; }
 
+
+  /* ===== Rechnung aufteilen ===== */
+  .guest-footer .btn-split {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+  }
+  .btn-pay:disabled { opacity: 0.3; }
+  .split-panel {
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 4px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .split-title {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 1.15rem;
+  }
+  .split-hint {
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    margin: 2px 0 10px 0;
+  }
+  .split-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid var(--card-border);
+    font-size: 0.88rem;
+  }
+  .split-row:first-child { border-top: none; }
+  .split-stepper {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .split-step {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    background: transparent;
+    color: var(--accent);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+  }
+  .split-step:active { background: rgba(255, 255, 255, 0.2); }
+  .split-step:disabled { opacity: 0.25; }
+  .split-count {
+    min-width: 44px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+  .split-name-input {
+    width: 100%;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 3px;
+    padding: 9px 10px;
+    color: var(--text);
+    font-size: 0.85rem;
+  }
+  .split-name-input:focus { outline: none; border-color: var(--accent); }
+  .split-sums {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 12px 0 4px 0;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .split-sums strong { color: var(--text); margin-left: 4px; }
+  .split-sum-main {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+  .split-equal {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 10px;
+    border-top: 1px dashed var(--card-border);
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .split-equal-result { width: 100%; text-align: right; color: var(--text); font-size: 0.9rem; }
+
   /* ===== iPad / Tablet Anpassungen ===== */
   @media (min-width: 700px) {
     body {
@@ -852,6 +954,7 @@ let saveTimer = null;
 let knownGuestIds = new Set();
 let newHistoryEntryId = null;
 let payFinalized = new Set();
+let splitState = null; // Aufteilen-Modus: { guestId, sel: {typ: anzahl}, payer: '', ways: 2 }
 let deleteFinalized = new Set();
 
 function fmt(n) {
@@ -1142,6 +1245,180 @@ function finalizeDelete(guestId) {
   render();
 }
 
+
+// ===== Rechnung aufteilen (z. B. Gruppe, jeder zahlt einzeln) =====
+function esc(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function guestDrinkUnits(g) {
+  return DRINK_ORDER.reduce((n, t) => n + (g.drinks[t] || 0), 0);
+}
+
+function splitSelectionTotal() {
+  if (!splitState) return 0;
+  return DRINK_ORDER.reduce((sum, t) => sum + (splitState.sel[t] || 0) * PRICES[t], 0);
+}
+
+function startSplit(guestId) {
+  const g = guests.find(x => x.id === guestId);
+  if (!g) return;
+  guests.forEach(x => { x.confirmingPay = false; x.confirmingDelete = false; });
+  g.collapsed = false;
+  splitState = { guestId: guestId, sel: {}, payer: '', ways: 2 };
+  render();
+}
+
+function cancelSplit() {
+  splitState = null;
+  render();
+}
+
+function splitAdjust(type, delta) {
+  if (!splitState) return;
+  const g = guests.find(x => x.id === splitState.guestId);
+  if (!g) return;
+  const cur = splitState.sel[type] || 0;
+  splitState.sel[type] = Math.max(0, Math.min(g.drinks[type] || 0, cur + delta));
+  render();
+}
+
+function splitSetPayer(value) {
+  if (splitState) splitState.payer = value;
+}
+
+function splitWays(delta) {
+  if (!splitState) return;
+  splitState.ways = Math.max(2, Math.min(30, splitState.ways + delta));
+  render();
+}
+
+function buildSplitPanelHtml(g, total) {
+  const selTotal = splitSelectionTotal();
+  const rest = Math.max(0, total - selTotal);
+  const rows = DRINK_ORDER.filter(t => (g.drinks[t] || 0) > 0).map(t => {
+    const avail = g.drinks[t];
+    const sel = splitState.sel[t] || 0;
+    return `<div class="split-row">
+      <span class="split-label">${LABELS[t]}</span>
+      <span class="split-stepper">
+        <button class="split-step" onclick="splitAdjust('${t}', -1)" ${sel === 0 ? 'disabled' : ''}>−</button>
+        <span class="split-count">${sel} / ${avail}</span>
+        <button class="split-step" onclick="splitAdjust('${t}', 1)" ${sel >= avail ? 'disabled' : ''}>+</button>
+      </span>
+    </div>`;
+  }).join('');
+
+  const ways = splitState.ways;
+  const share = Math.round(total / ways * 100) / 100;
+  const exact = Math.abs(share * ways - total) < 0.005;
+
+  return `
+    <div class="split-panel">
+      <div class="split-title">✂ Rechnung aufteilen</div>
+      <div class="split-hint">Getränke wählen, die jetzt bezahlt werden. Der Rest bleibt offen.</div>
+      <div class="split-rows">${rows}</div>
+      <input type="text" class="split-name-input" placeholder="Name der zahlenden Person (optional)" maxlength="30"
+             value="${esc(splitState.payer)}" oninput="splitSetPayer(this.value)">
+      <div class="split-sums">
+        <span>Ausgewählt <strong class="split-sum-main">${fmt(selTotal)}</strong></span>
+        <span>Rest offen <strong>${fmt(rest)}</strong></span>
+      </div>
+      <div class="guest-footer">
+        <button class="btn-pay" onclick="confirmSplit()" ${selTotal <= 0 ? 'disabled' : ''}>✓ ${fmt(selTotal)} kassieren</button>
+        <button class="btn-cancel" onclick="cancelSplit()">Abbrechen</button>
+      </div>
+      <div class="split-equal">
+        <span>Rechenhilfe: gesamte Rechnung teilen durch</span>
+        <span class="split-stepper">
+          <button class="split-step" onclick="splitWays(-1)" ${ways <= 2 ? 'disabled' : ''}>−</button>
+          <span class="split-count">${ways}</span>
+          <button class="split-step" onclick="splitWays(1)">+</button>
+        </span>
+        <span class="split-equal-result">${exact ? '' : '≈ '}${fmt(share)} pro Person</span>
+      </div>
+    </div>`;
+}
+
+function flashHistoryButton() {
+  const toggleBtn = document.getElementById('historyToggle');
+  if (toggleBtn && !historyVisible) {
+    toggleBtn.classList.add('glow');
+    setTimeout(() => toggleBtn.classList.remove('glow'), 1900);
+  }
+}
+
+function confirmSplit() {
+  if (!splitState) return;
+  const g = guests.find(x => x.id === splitState.guestId);
+  if (!g) { splitState = null; render(); return; }
+  const selTotal = splitSelectionTotal();
+  if (selTotal <= 0) return;
+
+  const payer = splitState.payer.trim();
+  const drinks = {};
+  DRINK_ORDER.forEach(t => { drinks[t] = splitState.sel[t] || 0; });
+
+  const entry = {
+    id: 'h_' + Date.now().toString() + '_' + Math.floor(Math.random() * 1000),
+    name: payer ? `${payer} · ${g.name}` : `${g.name} (Teil)`,
+    drinks: drinks,
+    total: Math.round(selTotal * 100) / 100,
+    paidAt: new Date().toISOString(),
+    wasReorder: false,
+    previouslyPaidTotal: null,
+    splitFrom: g.name
+  };
+
+  // Bezahlte Getränke von der offenen Rechnung abziehen (auch aus dem Rückgängig-Protokoll)
+  DRINK_ORDER.forEach(t => {
+    const n = drinks[t];
+    if (!n) return;
+    g.drinks[t] = Math.max(0, (g.drinks[t] || 0) - n);
+    if (g.actionLog) {
+      let toRemove = n;
+      for (let i = g.actionLog.length - 1; i >= 0 && toRemove > 0; i--) {
+        if (g.actionLog[i] === t) { g.actionLog.splice(i, 1); toRemove--; }
+      }
+    }
+  });
+
+  paidHistory.unshift(entry);
+  newHistoryEntryId = entry.id;
+  const guestId = g.id;
+  const nothingLeft = guestDrinkUnits(g) === 0;
+  splitState = null;
+  scheduleSave();
+
+  if (!nothingLeft) {
+    render();
+    renderHistory();
+    flashHistoryButton();
+    return;
+  }
+
+  // Letzter Teil bezahlt: Karte wie bei "Bezahlt" nach unten wegschweben lassen
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    guests = guests.filter(x => x.id !== guestId);
+    knownGuestIds.delete(guestId);
+    scheduleSave();
+    render();
+    renderHistory();
+    flashHistoryButton();
+  };
+  const cardEl = document.getElementById('guest-card-' + guestId);
+  if (cardEl) {
+    cardEl.classList.add('exiting');
+    cardEl.addEventListener('animationend', finish, { once: true });
+    setTimeout(finish, 650);
+  } else {
+    finish();
+  }
+}
+
 function cancelConfirm(guestId) {
   const g = guests.find(g => g.id === guestId);
   if (!g) return;
@@ -1166,6 +1443,7 @@ function toggleGuestCollapse(guestId) {
 }
 
 function render() {
+  if (splitState && !guests.some(x => x.id === splitState.guestId)) splitState = null;
   const list = document.getElementById('guestList');
   const empty = document.getElementById('emptyState');
   const noResults = document.getElementById('noSearchResults');
@@ -1221,6 +1499,9 @@ function render() {
       }
     });
 
+    const inSplit = !!(splitState && splitState.guestId === g.id && !g.collapsed);
+    const canSplit = g.previouslyPaidTotal === undefined && guestDrinkUnits(g) >= 2;
+
     let footerHtml;
     const additionalDue = g.previouslyPaidTotal !== undefined ? Math.max(0, total - g.previouslyPaidTotal) : null;
     const payLabel = additionalDue !== null
@@ -1243,6 +1524,7 @@ function render() {
       footerHtml = `
         <div class="guest-footer">
           <button class="btn-pay" onclick="payGuest('${g.id}')">${payLabel}</button>
+          ${canSplit ? `<button class="btn-split" onclick="startSplit('${g.id}')">✂ Aufteilen</button>` : ''}
           <button class="btn-delete" onclick="deleteGuest('${g.id}')">Entfernen</button>
         </div>`;
     }
@@ -1256,10 +1538,11 @@ function render() {
 
     card.innerHTML = `
       <div class="guest-header guest-header-clickable" onclick="toggleGuestCollapse('${g.id}')">
-        <div class="guest-name">${g.name}<span class="guest-collapse-icon">▾</span></div>
+        <div class="guest-name">${esc(g.name)}<span class="guest-collapse-icon">▾</span></div>
         <div class="guest-total">${fmt(total)}</div>
       </div>
       ${g.collapsed ? `<div class="guest-collapsed-hint">Eingeklappt — antippen zum Öffnen</div>` : `
+      ${inSplit ? buildSplitPanelHtml(g, total) : `
       ${reorderBanner}
       <div class="drink-category-label alc-label">🔴 Alkoholisch</div>
       <div class="drink-buttons alc-grid">
@@ -1272,6 +1555,7 @@ function render() {
       ${(g.actionLog && g.actionLog.length > 0) ? `<button class="undo-btn" onclick="undoLastDrink('${g.id}')">↩ Letztes Getränk rückgängig</button>` : ''}
       ${tallyHtml}
       ${footerHtml}
+      `}
       `}
     `;
     list.appendChild(card);
@@ -1720,11 +2004,12 @@ function renderHistory() {
 
     entry.innerHTML = `
       <div class="history-entry-top">
-        <span class="history-entry-name">${h.name}</span>
+        <span class="history-entry-name">${esc(h.name)}</span>
         <span class="history-entry-total">${fmt(h.total)}</span>
       </div>
       <div class="history-entry-date">${fmtDate(h.paidAt)}</div>
       ${h.wasReorder ? `<div class="history-entry-reorder-tag">🔄 Inkl. Nachbestellung — davon bereits vorher bezahlt: ${fmt(h.previouslyPaidTotal)}</div>` : ''}
+      ${h.splitFrom ? `<div class="history-entry-reorder-tag">✂ Teilzahlung von „${esc(h.splitFrom)}“</div>` : ''}
       <div class="history-entry-drinks">${drinkParts.join(' · ')}</div>
       ${entryFooter}
     `;
@@ -1749,7 +2034,7 @@ loadData();
 // Fallback, wenn wirklich kein Internet verfügbar ist.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const swCode = `
-    const CACHE = 'strichliste-v4';
+    const CACHE = 'strichliste-v5';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
