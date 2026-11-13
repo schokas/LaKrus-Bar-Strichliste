@@ -287,6 +287,23 @@
   .tally-minus:active {
     transform: scale(0.92);
   }
+
+  /* ===== Tipp-Sicherheit & Feedback ===== */
+  button, .drink-btn, .tally-minus { touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+  .tally-line { font-size: 1rem; min-height: 48px; margin-bottom: 6px; padding: 0 2px; }
+  .tally-minus { width: 44px; height: 44px; font-size: 1.6rem; border-radius: 10px; }
+  .tally-minus:active { transform: scale(0.88); background: var(--danger); color: #fff; }
+  .drink-btn { position: relative; transition: transform .12s ease; }
+  .drink-btn.pop { animation: btnPop .35s ease-out; }
+  .drink-btn.pop::after { content: '+1'; position: absolute; top: 2px; right: 6px; font-size: .85rem; font-weight: 700; color: #fff; animation: plusOne .6s ease-out forwards; pointer-events: none; }
+  @keyframes btnPop { 0% { transform: scale(.92); box-shadow: 0 0 0 0 rgba(255,255,255,.7); } 50% { transform: scale(1.06); } 100% { transform: scale(1); box-shadow: 0 0 0 14px rgba(255,255,255,0); } }
+  @keyframes plusOne { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-16px); } }
+  .tally-line.flash-add { animation: rowAdd .7s ease-out; }
+  .tally-line.flash-remove { animation: rowRemove .7s ease-out; }
+  @keyframes rowAdd { 0% { background: rgba(255,255,255,.28); } 100% { background: transparent; } }
+  @keyframes rowRemove { 0% { background: rgba(212,99,79,.45); } 100% { background: transparent; } }
+  .guest-total.bump { animation: totalBump .4s ease-out; }
+  @keyframes totalBump { 0% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .undo-btn {
     width: 100%;
     background: transparent;
@@ -2259,7 +2276,7 @@ function fmt(n) {
 
 function buildDrinkButtonsHtml(guestId, types, categoryClass) {
   return types.map(type => `
-    <button class="drink-btn ${categoryClass}" onclick="addDrink('${guestId}','${type}')">
+    <button class="drink-btn ${categoryClass}${lastTap && lastTap.kind === 'add' && lastTap.guestId === guestId && lastTap.type === type ? ' pop' : ''}" onclick="addDrink('${guestId}','${type}')">
       <span class="icon">${ICONS[type]}</span>${SHORT_NAMES[type]}<small>+${fmt(PRICES[type])}</small>
     </button>
   `).join('');
@@ -2428,16 +2445,18 @@ function addGuest() {
   // Direkt zur neuen Gästekarte scrollen, damit sofort Getränke eingegeben werden können
   setTimeout(() => {
     const card = document.getElementById('guest-card-' + newId);
-    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (card) card.scrollIntoView({ block: 'start' });
   }, 150);
 }
 
+let lastTap = null; // { guestId, type, kind:'add'|'remove' } -> Feedback-Animation beim nächsten render()
 function addDrink(guestId, type) {
   const g = guests.find(g => g.id === guestId);
   if (!g) return;
   g.drinks[type]++;
   if (!g.actionLog) g.actionLog = [];
   g.actionLog.push(type);
+  lastTap = { guestId, type, kind: 'add' };
   scheduleSave();
   render();
 }
@@ -2446,6 +2465,7 @@ function removeDrink(guestId, type) {
   const g = guests.find(g => g.id === guestId);
   if (!g || g.drinks[type] <= 0) return;
   g.drinks[type]--;
+  lastTap = { guestId, type, kind: 'remove' };
   scheduleSave();
   render();
 }
@@ -2455,6 +2475,7 @@ function undoLastDrink(guestId) {
   if (!g || !g.actionLog || g.actionLog.length === 0) return;
   const lastType = g.actionLog.pop();
   if (g.drinks[lastType] > 0) g.drinks[lastType]--;
+  lastTap = { guestId, type: lastType, kind: 'remove' };
   scheduleSave();
   render();
 }
@@ -2746,6 +2767,9 @@ function render() {
   const empty = document.getElementById('emptyState');
   const noResults = document.getElementById('noSearchResults');
   const searchWrap = document.getElementById('guestSearchWrap');
+  // Scrollposition festhalten: beim Neuaufbau schrumpft die Seite kurz und der Browser würde nach oben springen
+  const keepY = window.scrollY;
+  list.style.minHeight = list.offsetHeight + 'px';
   list.innerHTML = '';
 
   // Suchfeld nur einblenden, wenn es sich lohnt (ab 4 aktiven Gästen)
@@ -2787,7 +2811,7 @@ function render() {
     let tallyHtml = '';
     DRINK_ORDER.forEach(type => {
       if (g.drinks[type] > 0) {
-        tallyHtml += `<div class="tally-line">
+        tallyHtml += `<div class="tally-line${lastTap && lastTap.guestId === g.id && lastTap.type === type ? (lastTap.kind === 'add' ? ' flash-add' : ' flash-remove') : ''}">
           <span>${LABELS[type]}</span>
           <span class="tally-right">
             <span class="tally-amount">${g.drinks[type]}x — ${fmt(g.drinks[type]*PRICES[type])}</span>
@@ -2839,7 +2863,7 @@ function render() {
     card.innerHTML = `
       <div class="guest-header guest-header-clickable" onclick="toggleGuestCollapse('${g.id}')">
         <div class="guest-name">${esc(g.name)}<span class="guest-collapse-icon">▾</span></div>
-        <div class="guest-total">${additionalDue !== null ? `<div class="guest-total-label">Noch offen</div>${fmt(additionalDue)}<div class="guest-total-sub">Gesamt ${fmt(total)} · bezahlt ${fmt(g.previouslyPaidTotal)}</div>` : fmt(total)}</div>
+        <div class="guest-total${lastTap && lastTap.guestId === g.id ? ' bump' : ''}">${additionalDue !== null ? `<div class="guest-total-label">Noch offen</div>${fmt(additionalDue)}<div class="guest-total-sub">Gesamt ${fmt(total)} · bezahlt ${fmt(g.previouslyPaidTotal)}</div>` : fmt(total)}</div>
       </div>
       ${g.collapsed ? `<div class="guest-collapsed-hint">Eingeklappt — antippen zum Öffnen</div>` : `
       ${inSplit ? buildSplitPanelHtml(g, total) : `
@@ -2863,6 +2887,9 @@ function render() {
 
   knownGuestIds = new Set(guests.map(g => g.id));
   document.getElementById('grandTotal').textContent = fmt(grandTotal);
+  list.style.minHeight = '';
+  if (Math.abs(window.scrollY - keepY) > 1) window.scrollTo(0, keepY);
+  lastTap = null;
 }
 
 function fmtDate(iso) {
@@ -3334,7 +3361,7 @@ loadData();
 // Fallback, wenn wirklich kein Internet verfügbar ist.
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
   const swCode = `
-    const CACHE = 'strichliste-v7';
+    const CACHE = 'strichliste-v8';
     self.addEventListener('install', e => {
       self.skipWaiting();
     });
